@@ -19,6 +19,27 @@ pub enum Lang {
 }
 
 impl Lang {
+    pub fn eng_name(self) -> &'static str {
+        match self {
+            Lang::Ara => "arabic",
+            Lang::Cmn => "mandarin",
+            Lang::Deu => "german",
+            Lang::Eng => "english",
+            Lang::Fra => "french",
+            Lang::Hin => "hindi",
+            Lang::Ita => "italian",
+            Lang::Jpn => "japanese",
+            Lang::Kor => "korean",
+            Lang::Nld => "dutch",
+            Lang::Por => "portuguese",
+            Lang::Rus => "russian",
+            Lang::Spa => "spanish",
+            Lang::Swe => "swedish",
+            Lang::Tur => "turkish",
+            Lang::Vie => "vietnamese",
+        }
+    }
+
     pub fn three_letter_code(self) -> &'static str {
         match self {
             Lang::Ara => "ara",
