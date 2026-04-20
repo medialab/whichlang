@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 pub use crate::weights::{Lang, LANGUAGES};
 
 #[allow(clippy::all)]
@@ -45,7 +47,7 @@ impl Feature {
     }
 }
 
-pub fn detect_language(text: &str) -> Lang {
+pub fn detect_language(text: &str) -> Option<Lang> {
     let mut scores: [f32; NUM_LANGUAGES] = Default::default();
     let mut num_features: u32 = 0;
     emit_tokens(
@@ -62,8 +64,7 @@ pub fn detect_language(text: &str) -> Lang {
         },
     );
     if num_features == 0 {
-        // By default, we return English
-        return Lang::Eng;
+        return None;
     }
 
     let sqrt_inv_num_features = 1.0f32 / (num_features as f32).sqrt();
@@ -73,13 +74,11 @@ pub fn detect_language(text: &str) -> Lang {
         scores[i] = scores[i] * sqrt_inv_num_features + weights::INTERCEPTS[i];
     }
 
-    let lang_id = scores
+    scores
         .iter()
         .enumerate()
-        .max_by(|(_, &score_left), (_, &score_right)| score_left.partial_cmp(&score_right).unwrap())
-        .map(|(pos, _val)| pos)
-        .unwrap();
-    weights::LANGUAGES[lang_id]
+        .max_by(|(_, &score_left), (_, &score_right)| score_left.partial_cmp(&score_right).unwrap_or(Ordering::Equal))
+        .map(|(pos, _)| weights::LANGUAGES[pos])
 }
 
 #[doc(hidden)]
@@ -241,33 +240,33 @@ mod tests {
 
     #[test]
     fn test_empty_str() {
-        assert_eq!(detect_language(""), Lang::Eng);
+        assert_eq!(detect_language(""), None);
     }
 
     #[test]
     fn test_detect_language() {
         // English
-        assert_eq!(detect_language("Hello, happy tax payer"), Lang::Eng);
+        assert_eq!(detect_language("Hello, happy tax payer"), Some(Lang::Eng));
         // French
-        assert_eq!(detect_language("Bonjour joyeux contribuable"), Lang::Fra);
+        assert_eq!(detect_language("Bonjour joyeux contribuable"), Some(Lang::Fra));
         // German
-        assert_eq!(detect_language("Hallo glücklicher Steuerzahler"), Lang::Deu);
+        assert_eq!(detect_language("Hallo glücklicher Steuerzahler"), Some(Lang::Deu));
         // Japanese
-        assert_eq!(detect_language("こんにちは幸せな税金納め"), Lang::Jpn);
+        assert_eq!(detect_language("こんにちは幸せな税金納め"), Some(Lang::Jpn));
         // Mandarin chinese
-        assert_eq!(detect_language("你好幸福的纳税人"), Lang::Cmn);
+        assert_eq!(detect_language("你好幸福的纳税人"), Some(Lang::Cmn));
         // Turkish
-        assert_eq!(detect_language("Merhaba, mutlu vergi mükellefi"), Lang::Tur);
+        assert_eq!(detect_language("Merhaba, mutlu vergi mükellefi"), Some(Lang::Tur));
         // Dutch
-        assert_eq!(detect_language("Hallo, blije belastingbetaler"), Lang::Nld);
+        assert_eq!(detect_language("Hallo, blije belastingbetaler"), Some(Lang::Nld));
         // Korean
-        assert_eq!(detect_language("안녕하세요 행복한 납세자입니다"), Lang::Kor);
+        assert_eq!(detect_language("안녕하세요 행복한 납세자입니다"), Some(Lang::Kor));
         // Italian
-        assert_eq!(detect_language("Ciao, felice contribuente!"), Lang::Ita);
+        assert_eq!(detect_language("Ciao, felice contribuente!"), Some(Lang::Ita));
         // Spanish
-        assert_eq!(detect_language("Hola feliz contribuyente"), Lang::Spa);
-        assert_eq!(detect_language("¡Hola!"), Lang::Spa);
+        assert_eq!(detect_language("Hola feliz contribuyente"), Some(Lang::Spa));
+        assert_eq!(detect_language("¡Hola!"), Some(Lang::Spa));
         // Portuguese
-        assert_eq!(detect_language("Olá feliz contribuinte"), Lang::Por);
+        assert_eq!(detect_language("Olá feliz contribuinte"), Some(Lang::Por));
     }
 }
